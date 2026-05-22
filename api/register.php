@@ -7,7 +7,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $username = mysqli_real_escape_string($koneksi, $_POST['username']);
     $password = password_hash($_POST['password'], PASSWORD_BCRYPT);
 
-    $cek_user = mysqli_query($koneksi, "SELECT * FROM user WHERE username='$username'");
+    $cek_user = mysqli_query($koneksi, "SELECT * FROM users WHERE username='$username'");
     if (mysqli_num_rows($cek_user) > 0) {
         $pesan = "username_ada";
     } else {
