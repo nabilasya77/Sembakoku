@@ -1,9 +1,9 @@
 <?php
 $host = 'gateway01.ap-southeast-1.prod.alicloud.tidbcloud.com'; 
 $port = 4000; 
-$user = '2WxCR6w5mdhSdWD.root';
-$pass = 'CEOeyN7k8gC0jFxm'; 
-$db   = 'db_wisata';
+$user = '4V8VSYyX9oHGkdj.root';
+$pass = 'jKgo691yYWKXnM8o'; 
+$db   = 'sembakoku';
 
 $koneksi = mysqli_init();
 
