@@ -1,8 +1,11 @@
 <?php
-// 1. Start session
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+
+require 'auth.php';
+
+require_once 'Server/koneksi.php';
+
+$nama_user = $_SESSION['nama'];
+$username  = $_SESSION['username'];
 
 // 2. Koneksi database
 require_once 'Server/koneksi.php';
