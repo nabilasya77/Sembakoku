@@ -1,33 +1,77 @@
 <?php
-include __DIR__ . '/../Server/koneksi.php';
+
+require_once __DIR__ . '/../Server/koneksi.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header("Location: ../login.php");
+    header('Location: /api/login.php');
     exit;
 }
 
-$username = mysqli_real_escape_string($koneksi, $_POST['username']);
-$password = $_POST['password'];
+$username = trim($_POST['username'] ?? '');
+$password = $_POST['password'] ?? '';
 
-$query = mysqli_query($koneksi, "SELECT * FROM user WHERE username='$username'");
+$stmt = mysqli_prepare(
+    $koneksi,
+    "SELECT * FROM user WHERE username=? LIMIT 1"
+);
 
-if ($query && mysqli_num_rows($query) > 0) {
-    $row = mysqli_fetch_assoc($query);
+mysqli_stmt_bind_param(
+    $stmt,
+    "s",
+    $username
+);
 
-    if (password_verify($password, $row['password'])) {
-        setcookie("login",    "true",          time() + 3600, "/");
-        setcookie("id",       $row['id'],       time() + 3600, "/");
-        setcookie("username", $row['username'], time() + 3600, "/");
-        setcookie("nama",     $row['nama'],     time() + 3600, "/");
+mysqli_stmt_execute($stmt);
 
-        header("Location: ../dashboard.php");
-        exit;
-    } else {
-        header("Location: ../login.php?pesan=gagal");
+$result = mysqli_stmt_get_result($stmt);
+
+if ($result && mysqli_num_rows($result) === 1) {
+
+    $row = mysqli_fetch_assoc($result);
+
+    if (password_verify(
+        $password,
+        $row['password']
+    )) {
+
+        setcookie(
+            'login',
+            'true',
+            time()+3600,
+            '/'
+        );
+
+        setcookie(
+            'id',
+            $row['id'],
+            time()+3600,
+            '/'
+        );
+
+        setcookie(
+            'username',
+            $row['username'],
+            time()+3600,
+            '/'
+        );
+
+        setcookie(
+            'nama',
+            $row['nama'],
+            time()+3600,
+            '/'
+        );
+
+        header(
+            'Location: /api/dashboard.php'
+        );
+
         exit;
     }
-} else {
-    header("Location: ../login.php?pesan=gagal");
-    exit;
 }
-?>
+
+header(
+    'Location: /api/login.php?pesan=gagal'
+);
+
+exit;

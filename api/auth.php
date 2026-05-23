@@ -1,9 +1,13 @@
 <?php
 
-session_start();
+if (
+    !isset($_COOKIE['login']) ||
+    $_COOKIE['login'] !== 'true'
+) {
 
-if (!isset($_SESSION['id'])) {
+    header(
+        'Location: /api/login.php?pesan=belum_login'
+    );
 
-    header("Location: login.php?pesan=belum_login");
     exit;
 }

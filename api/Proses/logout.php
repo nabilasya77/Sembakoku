@@ -1,27 +1,35 @@
 <?php
 
-session_start();
+setcookie(
+    'login',
+    '',
+    time()-3600,
+    '/'
+);
 
-$_SESSION = [];
+setcookie(
+    'id',
+    '',
+    time()-3600,
+    '/'
+);
 
-if (ini_get("session.use_cookies")) {
+setcookie(
+    'username',
+    '',
+    time()-3600,
+    '/'
+);
 
-    $params = session_get_cookie_params();
+setcookie(
+    'nama',
+    '',
+    time()-3600,
+    '/'
+);
 
-    setcookie(
-        session_name(),
-        '',
-        time() - 42000,
-        $params['path'],
-        $params['domain'],
-        $params['secure'],
-        $params['httponly']
-    );
-}
+header(
+    'Location: /api/login.php?pesan=logout'
+);
 
-session_destroy();
-
-header("Location: login.php?pesan=logout");
 exit;
-
-?>
