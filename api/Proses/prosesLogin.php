@@ -9,7 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $username = mysqli_real_escape_string($koneksi, $_POST['username']);
 $password = $_POST['password'];
 
-$query = mysqli_query($koneksi, "SELECT * FROM user WHERE username='$username'");
+$query = mysqli_query($koneksi, "SELECT * FROM users WHERE username='$username'");
 
 if ($query && mysqli_num_rows($query) > 0) {
     $row = mysqli_fetch_assoc($query);
