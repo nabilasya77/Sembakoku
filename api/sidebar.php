@@ -1,8 +1,6 @@
 <?php
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-if (!isset($_SESSION['id'])) {
+// Cek login menggunakan COOKIE
+if (!isset($_COOKIE['login']) || $_COOKIE['login'] !== "true") {
     header("Location: login.php?pesan=belum_login");
     exit;
 }

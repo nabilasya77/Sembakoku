@@ -1,4 +1,10 @@
 <?php
+// Tambahkan pengecekan cookie: Jika sudah login, cegah akses ke halaman daftar dan arahkan ke dashboard
+if (isset($_COOKIE['login']) && $_COOKIE['login'] === "true") {
+    header("Location: dashboard.php");
+    exit;
+}
+
 include 'Server/koneksi.php';
 $pesan = "";
 
