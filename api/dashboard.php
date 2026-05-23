@@ -1,6 +1,6 @@
 <?php
-
-require_once 'auth.php';
+// 1. Koneksi database
+require_once 'Server/koneksi.php';
 
 // 2. ✅ FIX: Cek login pakai COOKIE agar support Vercel Serverless
 if (!isset($_COOKIE['login']) || $_COOKIE['login'] !== "true") {
