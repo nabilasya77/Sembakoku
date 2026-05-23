@@ -1,6 +1,9 @@
 <?php
 session_start();
-include '../Server/koneksi.php';
+
+// Menggunakan __DIR__ agar path-nya absolut dan tidak mudah meleset
+// PASTIKAN folder kamu bernama "Server" (huruf S besar). Jika kecil, ubah menjadi 'server'
+include __DIR__ . '/../Server/koneksi.php';
 
 $username = mysqli_real_escape_string($koneksi, $_POST['username']);
 $password = $_POST['password'];
@@ -13,11 +16,14 @@ if ($user) {
         $_SESSION['id']       = $user['id'];
         $_SESSION['nama']     = $user['nama'];
         $_SESSION['username'] = $user['username'];
-        header("Location: ../../dashboard.php"); // ← fix di sini
+        
+        // Cukup mundur 1 folder (../) untuk kembali ke file utama di dalam /api/
+        header("Location: ../dashboard.php");
         exit;
     }
 }
 
-header("Location: ../../api/login.php?pesan=gagal"); // ← dan di sini
+// Cukup mundur 1 folder untuk memanggil login.php
+header("Location: ../login.php?pesan=gagal");
 exit;
 ?>

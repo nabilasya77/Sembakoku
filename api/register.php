@@ -15,7 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Memasukkan data baru menggunakan tabel 'users' yang sama
         $query = "INSERT INTO users (nama, username, password) VALUES ('$nama', '$username', '$password')";
         if (mysqli_query($koneksi, $query)) {
-            header("Location: login.php?pesan=registrasi_sukses");
+            // FIX: Ubah parameter di sini agar sesuai dengan file login.php
+            header("Location: login.php?registrasi=sukses");
             exit;
         } else {
             $pesan = "gagal";
