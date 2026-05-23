@@ -7,12 +7,12 @@ if (session_status() == PHP_SESSION_NONE) {
 // 2. Hubungkan ke Database
 include 'Server/koneksi.php';
 
-// 3. Validasi Login - Jika belum login, arahkan ke halaman login
+session_start();
+
 if (!isset($_SESSION['id'])) {
     header("Location: login.php?pesan=belum_login");
     exit;
 }
-
 // 4. Hubungkan ke Sidebar & Header Navigasi
 include 'sidebar.php';
 
