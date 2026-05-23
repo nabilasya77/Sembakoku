@@ -1,6 +1,14 @@
 <?php
+// ✅ FIX 1: Sertakan koneksi dari folder Server
 include 'Server/koneksi.php';
-$id = $_GET['id'];
-mysqli_query($conn, "DELETE FROM barang WHERE id='$id'");
+
+// ✅ FIX 2: Cast ke integer agar aman dari SQL Injection
+$id = (int)$_GET['id'];
+
+if ($id > 0) {
+    mysqli_query($koneksi, "DELETE FROM barang WHERE id = $id");
+}
+
 header("Location: stok.php");
+exit;
 ?>
