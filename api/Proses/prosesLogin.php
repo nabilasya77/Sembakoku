@@ -13,11 +13,11 @@ if ($user) {
         $_SESSION['id']       = $user['id'];
         $_SESSION['nama']     = $user['nama'];
         $_SESSION['username'] = $user['username'];
-        header("Location: ../dashboard.php");
+        header("Location: ../../dashboard.php"); // ← fix di sini
         exit;
     }
 }
 
-header("Location: ../login.php?pesan=gagal");
+header("Location: ../../api/login.php?pesan=gagal"); // ← dan di sini
 exit;
 ?>
