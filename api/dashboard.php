@@ -8,66 +8,44 @@ if (!isset($_COOKIE['login'])) {
 }
 
 // Card 1: Total Penjualan Hari Ini
-$penjualan_hari_ini_q = mysqli_query($koneksi,
-    "SELECT SUM(total_bayar) AS total
-     FROM penjualan
-     WHERE DATE(tanggal) = CURDATE()"
-);
-
-$penjualan_hari_ini = mysqli_fetch_assoc($penjualan_hari_ini_q)['total'] ?? 0;
-
+$penjualan_hari_ini_q = mysqli_query($koneksi, "SELECT SUM(total_bayar) AS total FROM penjualan WHERE DATE(tanggal) = CURDATE()");
+$penjualan_hari_ini   = mysqli_fetch_assoc($penjualan_hari_ini_q)['total'] ?? 0;
 
 // Card 2: Jumlah Transaksi Hari Ini
-$transaksi_hari_ini_q = mysqli_query($koneksi,
-    "SELECT COUNT(*) AS total
-     FROM penjualan
-     WHERE DATE(tanggal) = CURDATE()"
-);
+$transaksi_hari_ini_q = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM penjualan WHERE DATE(tanggal) = CURDATE()");
+$transaksi_hari_ini   = mysqli_fetch_assoc($transaksi_hari_ini_q)['total'] ?? 0;
 
-$transaksi_hari_ini = mysqli_fetch_assoc($transaksi_hari_ini_q)['total'] ?? 0;
+// Card 3: Total Keuntungan Hari Ini (Laba Bersih = Harga Jual - Harga Beli)
+$keuntungan_hari_ini_q = mysqli_query($koneksi, "
+    SELECT SUM(dp.jumlah * (b.harga_jual - b.harga_beli)) AS total 
+    FROM detail_penjualan dp 
+    JOIN barang b ON dp.barang_id = b.id 
+    JOIN penjualan p ON dp.penjualan_id = p.id 
+    WHERE DATE(p.tanggal) = CURDATE()
+");
+$keuntungan_hari_ini   = mysqli_fetch_assoc($keuntungan_hari_ini_q)['total'] ?? 0;
 
-
-// Card 3: Total Keuntungan
-$keuntungan_hari_ini_q = mysqli_query($koneksi,
-    "SELECT SUM(dp.jumlah * (b.harga_jual - b.harga_beli)) AS total
-     FROM detail_penjualan dp
-     JOIN barang b ON dp.barang_id = b.id
-     JOIN penjualan p ON dp.penjualan_id = p.id
-     WHERE DATE(p.tanggal) = CURDATE()"
-);
-
-$keuntungan_hari_ini = mysqli_fetch_assoc($keuntungan_hari_ini_q)['total'] ?? 0;
+// Card 4: Stok Hampir Habis (Peringatan di bawah 10 pcs)
+$stok_hampir_habis_q = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM barang WHERE stok < 10");
+$stok_hampir_habis   = mysqli_fetch_assoc($stok_hampir_habis_q)['total'] ?? 0;
 
 
-// Card 4: Stok Hampir Habis
-$stok_hampir_habis_q = mysqli_query($koneksi,
-    "SELECT COUNT(*) AS total
-     FROM barang
-     WHERE stok < 10"
-);
-
-$stok_hampir_habis = mysqli_fetch_assoc($stok_hampir_habis_q)['total'] ?? 0;
-
-
-// Grafik 7 Hari
+// ==========================================
+// 6. GENERATE DATA GRAFIK PENJUALAN 7 HARI TERAKHIR
+// ==========================================
 $hari_labels = [];
-$omset_hari = [];
+$omset_hari  = [];
 
+// Looping untuk memastikan seluruh 7 hari terakhir muncul secara berurutan meskipun omsetnya 0
 for ($i = 6; $i >= 0; $i--) {
-
-    $tgl_raw = date('Y-m-d', strtotime("-$i days"));
-    $tgl_label = date('d M', strtotime("-$i days"));
-
+    $tgl_raw   = date('Y-m-d', strtotime("-$i days"));
+    $tgl_label = date('d M', strtotime("-$i days")); // Contoh: "22 Mei"
+    
     $hari_labels[] = $tgl_label;
-
-    $q_omset = mysqli_query($koneksi,
-        "SELECT SUM(total_bayar) AS total
-         FROM penjualan
-         WHERE DATE(tanggal) = '$tgl_raw'"
-    );
-
+    
+    // Ambil data penjualan di tanggal tersebut
+    $q_omset = mysqli_query($koneksi, "SELECT SUM(total_bayar) AS total FROM penjualan WHERE DATE(tanggal) = '$tgl_raw'");
     $d_omset = mysqli_fetch_assoc($q_omset);
-
     $omset_hari[] = (int)($d_omset['total'] ?? 0);
 }
 
