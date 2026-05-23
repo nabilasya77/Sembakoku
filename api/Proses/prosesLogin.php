@@ -1,6 +1,6 @@
 <?php
 
-include '../Server/koneksi.php';
+include __DIR__ . '/../server/koneksi.php';
 
 $username = mysqli_real_escape_string($koneksi, $_POST['username']);
 $password = $_POST['password'];
