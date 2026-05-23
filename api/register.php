@@ -1,24 +1,17 @@
 <?php
-// Tambahkan pengecekan cookie: Jika sudah login, cegah akses ke halaman daftar dan arahkan ke dashboard
-if (isset($_COOKIE['login']) && $_COOKIE['login'] === "true") {
-    header("Location: dashboard.php");
-    exit;
-}
-
 include 'Server/koneksi.php';
 $pesan = "";
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $nama     = mysqli_real_escape_string($koneksi, $_POST['nama']);
     $username = mysqli_real_escape_string($koneksi, $_POST['username']);
     $password = password_hash($_POST['password'], PASSWORD_BCRYPT);
 
-    // Memeriksa username menggunakan tabel 'users'
-    $cek_user = mysqli_query($koneksi, "SELECT * FROM users WHERE username='$username'");
+    $cek_user = mysqli_query($koneksi, "SELECT * FROM user WHERE username='$username'");
     if (mysqli_num_rows($cek_user) > 0) {
         $pesan = "username_ada";
     } else {
-        // Memasukkan data baru menggunakan tabel 'users' yang sama
-        $query = "INSERT INTO users (nama, username, password) VALUES ('$nama', '$username', '$password')";
+        $query = "INSERT INTO user (nama, username, password) VALUES ('$nama', '$username', '$password')";
         if (mysqli_query($koneksi, $query)) {
             header("Location: login.php?pesan=registrasi_sukses");
             exit;
