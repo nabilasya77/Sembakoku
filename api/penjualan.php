@@ -1,9 +1,22 @@
 <?php
 include 'Server/koneksi.php';
-include 'sidebar.php';
 
-if (!isset($_SESSION['keranjang'])) {
-    $_SESSION['keranjang'] = [];
+// Validasi Login (Opsional, menyesuaikan dengan sistem login Cookie Anda sebelumnya)
+if (!isset($_COOKIE['login']) || $_COOKIE['login'] !== "true") {
+    header("Location: login.php?pesan=belum_login");
+    exit;
+}
+
+// 0. Inisialisasi Keranjang dari Cookie
+$keranjang = [];
+if (isset($_COOKIE['keranjang'])) {
+    // Decode data teks JSON dari cookie kembali menjadi Array PHP
+    $keranjang = json_decode($_COOKIE['keranjang'], true) ?: [];
+}
+
+// Fungsi pembantu untuk menyimpan perubahan array keranjang ke dalam Cookie (Berlaku 1 Hari)
+function simpanKeranjang($data_keranjang) {
+    setcookie('keranjang', json_encode($data_keranjang), time() + 86400, "/"); 
 }
 
 // Logika 1: Tambah Item Ke Keranjang Belanja Sementara
@@ -15,17 +28,21 @@ if (isset($_POST['aksi']) && $_POST['aksi'] == 'tambah_keranjang') {
     $brg      = mysqli_fetch_assoc($barang_q);
 
     if ($brg && $brg['stok'] >= $jumlah) {
-        if (isset($_SESSION['keranjang'][$barang_id])) {
-            $_SESSION['keranjang'][$barang_id]['jumlah']   += $jumlah;
-            $_SESSION['keranjang'][$barang_id]['subtotal'] = $_SESSION['keranjang'][$barang_id]['jumlah'] * $brg['harga_jual'];
+        if (isset($keranjang[$barang_id])) {
+            $keranjang[$barang_id]['jumlah']   += $jumlah;
+            $keranjang[$barang_id]['subtotal'] = $keranjang[$barang_id]['jumlah'] * $brg['harga_jual'];
         } else {
-            $_SESSION['keranjang'][$barang_id] = [
+            $keranjang[$barang_id] = [
                 'nama'     => $brg['nama_barang'],
                 'harga'    => $brg['harga_jual'],
                 'jumlah'   => $jumlah,
                 'subtotal' => $brg['harga_jual'] * $jumlah
             ];
         }
+        
+        // Simpan pembaruan ke Cookie
+        simpanKeranjang($keranjang);
+        
         echo "<script>window.location='penjualan.php';</script>";
         exit;
     } else {
@@ -37,15 +54,18 @@ if (isset($_POST['aksi']) && $_POST['aksi'] == 'tambah_keranjang') {
 // Logika 2: Reset / Hapus Item Keranjang Tunggal
 if (isset($_GET['hapus_item'])) {
     $id_del = (int)$_GET['hapus_item'];
-    unset($_SESSION['keranjang'][$id_del]);
+    if(isset($keranjang[$id_del])) {
+        unset($keranjang[$id_del]);
+        simpanKeranjang($keranjang); // Perbarui Cookie setelah item dihapus
+    }
     header("Location: penjualan.php");
     exit;
 }
 
 // Logika 3: Checkout Simpan Transaksi Permanen
-if (isset($_POST['aksi']) && $_POST['aksi'] == 'checkout' && !empty($_SESSION['keranjang'])) {
+if (isset($_POST['aksi']) && $_POST['aksi'] == 'checkout' && !empty($keranjang)) {
     $total_bayar = 0;
-    foreach ($_SESSION['keranjang'] as $item) {
+    foreach ($keranjang as $item) {
         $total_bayar += $item['subtotal'];
     }
     $tanggal_sekarang = date('Y-m-d H:i:s');
@@ -55,18 +75,24 @@ if (isset($_POST['aksi']) && $_POST['aksi'] == 'checkout' && !empty($_SESSION['k
     $penjualan_id  = mysqli_insert_id($koneksi);
 
     if ($ins_penjualan) {
-        foreach ($_SESSION['keranjang'] as $b_id => $item) {
+        foreach ($keranjang as $b_id => $item) {
             $jml = $item['jumlah'];
             // Insert ke tabel detail transaksi
             mysqli_query($koneksi, "INSERT INTO detail_penjualan (penjualan_id, barang_id, jumlah, subtotal) VALUES ('$penjualan_id', '$b_id', '$jml', '".$item['subtotal']."')");
             // Potong Stok Produk Otomatis
             mysqli_query($koneksi, "UPDATE barang SET stok = stok - $jml WHERE id = '$b_id'");
         }
-        $_SESSION['keranjang'] = []; // Kosongkan keranjang belanja
+        
+        // Kosongkan keranjang belanja dengan menghapus Cookie
+        setcookie('keranjang', '', time() - 3600, "/"); 
+        
         echo "<script>alert('Transaksi penjualan sukses disimpan!'); window.location='penjualan.php';</script>";
         exit;
     }
 }
+
+// Sertakan sidebar setelah logika Cookie (karena setcookie harus dieksekusi sebelum ada output HTML)
+include 'sidebar.php';
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -133,12 +159,12 @@ if (isset($_POST['aksi']) && $_POST['aksi'] == 'checkout' && !empty($_SESSION['k
                             <tbody class="divide-y divide-slate-100 text-sm font-medium text-slate-700">
                                 <?php
                                 $no_k = 1; $total_akhir = 0; $total_item = 0;
-                                if(empty($_SESSION['keranjang'])):
+                                if(empty($keranjang)):
                                 ?>
                                     <tr><td colspan="6" class="p-8 text-center text-slate-400 font-normal">Keranjang belanja masih kosong.</td></tr>
                                 <?php
                                 else:
-                                    foreach ($_SESSION['keranjang'] as $key_id => $item):
+                                    foreach ($keranjang as $key_id => $item):
                                         $total_akhir += $item['subtotal'];
                                         $total_item  += $item['jumlah'];
                                 ?>
@@ -157,7 +183,7 @@ if (isset($_POST['aksi']) && $_POST['aksi'] == 'checkout' && !empty($_SESSION['k
                         </table>
                     </div>
 
-                    <?php if(!empty($_SESSION['keranjang'])): ?>
+                    <?php if(!empty($keranjang)): ?>
                     <div class="p-5 bg-gray-50 border-t flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
                             <span class="text-xs text-gray-400 uppercase font-semibold block">Total Pembayaran</span>
