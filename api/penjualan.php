@@ -1,23 +1,19 @@
 <?php
+// WAJIB: Aktifkan session di baris paling atas untuk menyimpan data keranjang di server
+session_start(); 
 include 'Server/koneksi.php';
 
-// Validasi Login (Opsional, menyesuaikan dengan sistem login Cookie Anda sebelumnya)
+// Validasi Login (Tetap menggunakan Cookie sesuai sistem Anda)
 if (!isset($_COOKIE['login']) || $_COOKIE['login'] !== "true") {
     header("Location: login.php?pesan=belum_login");
     exit;
 }
 
-// 0. Inisialisasi Keranjang dari Cookie
-$keranjang = [];
-if (isset($_COOKIE['keranjang'])) {
-    // Decode data teks JSON dari cookie kembali menjadi Array PHP
-    $keranjang = json_decode($_COOKIE['keranjang'], true) ?: [];
+// 0. Inisialisasi Keranjang dari SESSION (Bukan Cookie lagi)
+if (!isset($_SESSION['keranjang'])) {
+    $_SESSION['keranjang'] = [];
 }
-
-// Fungsi pembantu untuk menyimpan perubahan array keranjang ke dalam Cookie (Berlaku 1 Hari)
-function simpanKeranjang($data_keranjang) {
-    setcookie('keranjang', json_encode($data_keranjang), time() + 86400, "/"); 
-}
+$keranjang = $_SESSION['keranjang'];
 
 // Logika 1: Tambah Item Ke Keranjang Belanja Sementara
 if (isset($_POST['aksi']) && $_POST['aksi'] == 'tambah_keranjang') {
@@ -40,8 +36,8 @@ if (isset($_POST['aksi']) && $_POST['aksi'] == 'tambah_keranjang') {
             ];
         }
         
-        // Simpan pembaruan ke Cookie
-        simpanKeranjang($keranjang);
+        // Simpan pembaruan ke Session
+        $_SESSION['keranjang'] = $keranjang;
         
         echo "<script>window.location='penjualan.php';</script>";
         exit;
@@ -56,7 +52,7 @@ if (isset($_GET['hapus_item'])) {
     $id_del = (int)$_GET['hapus_item'];
     if(isset($keranjang[$id_del])) {
         unset($keranjang[$id_del]);
-        simpanKeranjang($keranjang); // Perbarui Cookie setelah item dihapus
+        $_SESSION['keranjang'] = $keranjang; // Perbarui Session
     }
     header("Location: penjualan.php");
     exit;
@@ -83,15 +79,14 @@ if (isset($_POST['aksi']) && $_POST['aksi'] == 'checkout' && !empty($keranjang))
             mysqli_query($koneksi, "UPDATE barang SET stok = stok - $jml WHERE id = '$b_id'");
         }
         
-        // Kosongkan keranjang belanja dengan menghapus Cookie
-        setcookie('keranjang', '', time() - 3600, "/"); 
+        // Kosongkan keranjang belanja dengan menghapus Session
+        unset($_SESSION['keranjang']);
         
         echo "<script>alert('Transaksi penjualan sukses disimpan!'); window.location='penjualan.php';</script>";
         exit;
     }
 }
 
-// Sertakan sidebar setelah logika Cookie (karena setcookie harus dieksekusi sebelum ada output HTML)
 include 'sidebar.php';
 ?>
 <!DOCTYPE html>

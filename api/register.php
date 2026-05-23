@@ -5,7 +5,8 @@ if (isset($_POST['daftar'])) {
     $username = mysqli_real_escape_string($koneksi, $_POST['username']);
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
-    $ins = mysqli_query($koneksi, "INSERT INTO user (username, password) VALUES ('$username', '$password')");
+    // Asumsi tabel di database adalah 'users'. Jika 'user', hapus huruf 's' nya.
+    $ins = mysqli_query($koneksi, "INSERT INTO users (username, password) VALUES ('$username', '$password')");
     if ($ins) {
         header("Location: login.php?pesan=daftar_sukses");
         exit;

@@ -3,15 +3,16 @@ include 'Server/koneksi.php';
 
 // Jika sudah login, lempar ke dashboard
 if (isset($_COOKIE['login']) && $_COOKIE['login'] == "true") {
-    header("Location: index.php");
+    header("Location: dashboard.php"); // Diubah dari index.php
     exit;
 }
 
 if (isset($_POST['login'])) {
     $username = mysqli_real_escape_string($koneksi, $_POST['username']);
-    $password = $_POST['password']; // Gunakan md5() jika di database Anda pakai md5
+    $password = $_POST['password']; 
 
-    $query = mysqli_query($koneksi, "SELECT * FROM user WHERE username = '$username'");
+    // Asumsi tabel di database adalah 'users'. Jika 'user', hapus huruf 's' nya.
+    $query = mysqli_query($koneksi, "SELECT * FROM users WHERE username = '$username'");
     $user  = mysqli_fetch_assoc($query);
 
     if ($user && password_verify($password, $user['password'])) {
@@ -19,7 +20,7 @@ if (isset($_POST['login'])) {
         setcookie('login', 'true', time() + 86400, '/');
         setcookie('id', $user['id'], time() + 86400, '/');
         
-        header("Location: index.php");
+        header("Location: dashboard.php"); // Diubah dari index.php
         exit;
     } else {
         $error = "Username atau password salah!";
