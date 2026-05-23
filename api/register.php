@@ -1,7 +1,12 @@
 <?php
+// Tambahkan pengecekan cookie: Jika sudah login, cegah akses ke halaman daftar dan arahkan ke dashboard
+if (isset($_COOKIE['login']) && $_COOKIE['login'] === "true") {
+    header("Location: dashboard.php");
+    exit;
+}
+
 include 'Server/koneksi.php';
 $pesan = "";
-
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $nama     = mysqli_real_escape_string($koneksi, $_POST['nama']);
     $username = mysqli_real_escape_string($koneksi, $_POST['username']);
