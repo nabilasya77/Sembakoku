@@ -1,19 +1,19 @@
 <?php
-// 1. Pastikan Session Dimulai Lebih Awal
+// Session
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
-// 2. Hubungkan ke Database
+// Koneksi database
 include 'Server/koneksi.php';
 
-session_start();
-
+// Cek login
 if (!isset($_SESSION['id'])) {
     header("Location: login.php?pesan=belum_login");
     exit;
 }
-// 4. Hubungkan ke Sidebar & Header Navigasi
+
+// Sidebar
 include 'sidebar.php';
 
 
