@@ -1,6 +1,6 @@
 <?php
 session_start();
-if (isset($_SESSION['id'])) {
+if (isset($_COOKIE['login']) && $_COOKIE['login'] === "true") {
     header("Location: dashboard.php");
     exit;
 }
@@ -52,7 +52,8 @@ if (isset($_SESSION['id'])) {
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
                         <i class="fa-solid fa-user"></i>
                     </span>
-                    <input type="text" name="username" required placeholder="Masukkan username" class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition duration-150">
+                    <input type="text" name="username" required placeholder="Masukkan username"
+                        class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition duration-150">
                 </div>
             </div>
             <div>
@@ -61,10 +62,12 @@ if (isset($_SESSION['id'])) {
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
                         <i class="fa-solid fa-lock"></i>
                     </span>
-                    <input type="password" name="password" required placeholder="Masukkan password" class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition duration-150">
+                    <input type="password" name="password" required placeholder="Masukkan password"
+                        class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition duration-150">
                 </div>
             </div>
-            <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 transition duration-200">
+            <button type="submit"
+                class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 transition duration-200">
                 Masuk Sistem <i class="fa-solid fa-right-to-bracket ml-1 text-sm"></i>
             </button>
         </form>
