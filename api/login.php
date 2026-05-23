@@ -1,14 +1,9 @@
 <?php
-include 'Server/koneksi.php';
+session_start();
 
-if (isset($_COOKIE['login']) && $_COOKIE['login'] === "true") {
+if (isset($_SESSION['id'])) {
     header("Location: dashboard.php");
     exit;
-}
-
-$pesan = "";
-if (isset($_GET['pesan'])) {
-    $pesan = $_GET['pesan'];
 }
 ?>
 <!DOCTYPE html>
@@ -38,34 +33,54 @@ if (isset($_GET['pesan'])) {
         </p>
     </div>
 
-    <?php if ($pesan == 'gagal'): ?>
+    <?php if (isset($_GET['pesan'])): ?>
         <div class="mb-4 p-3 bg-red-50 text-red-600 rounded-xl text-sm border border-red-100">
-            Username atau password salah!
-        </div>
-    <?php elseif ($pesan == 'belum_login'): ?>
-        <div class="mb-4 p-3 bg-red-50 text-red-600 rounded-xl text-sm border border-red-100">
-            Anda harus login terlebih dahulu!
-        </div>
-    <?php elseif ($pesan == 'logout'): ?>
-        <div class="mb-4 p-3 bg-green-50 text-green-600 rounded-xl text-sm border border-green-100">
-            Berhasil logout!
+            <?php
+                if ($_GET['pesan'] == 'gagal') {
+                    echo 'Username atau password salah!';
+                } elseif ($_GET['pesan'] == 'belum_login') {
+                    echo 'Anda harus login terlebih dahulu!';
+                } elseif ($_GET['pesan'] == 'logout') {
+                    echo 'Berhasil logout!';
+                }
+            ?>
         </div>
     <?php endif; ?>
 
-    <form action="Proses/prosesLogin.php" method="POST" class="space-y-5">
+    <form action="proses/prosesLogin.php" method="POST" class="space-y-5">
+
         <div>
-            <label class="block text-gray-700 text-sm font-semibold mb-2">Username</label>
-            <input type="text" name="username" required class="w-full border border-gray-300 rounded-xl px-4 py-3" placeholder="Masukkan username">
+            <label class="block text-gray-700 text-sm font-semibold mb-2">
+                Username
+            </label>
+
+            <input
+                type="text"
+                name="username"
+                required
+                class="w-full border border-gray-300 rounded-xl px-4 py-3"
+                placeholder="Masukkan username">
         </div>
 
         <div>
-            <label class="block text-gray-700 text-sm font-semibold mb-2">Password</label>
-            <input type="password" name="password" required class="w-full border border-gray-300 rounded-xl px-4 py-3" placeholder="Masukkan password">
+            <label class="block text-gray-700 text-sm font-semibold mb-2">
+                Password
+            </label>
+
+            <input
+                type="password"
+                name="password"
+                required
+                class="w-full border border-gray-300 rounded-xl px-4 py-3"
+                placeholder="Masukkan password">
         </div>
 
-        <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl" name="login">
+        <button
+            type="submit"
+            class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl">
             Login
         </button>
+
     </form>
 
 </div>
