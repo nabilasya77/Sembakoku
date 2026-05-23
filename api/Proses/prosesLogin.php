@@ -1,29 +1,36 @@
 <?php
-session_start();
+session_start(); // Pastikan ini ada di baris paling atas!
+include '../Server/koneksi.php';
 
-// Menggunakan __DIR__ agar path-nya absolut dan tidak mudah meleset
-// PASTIKAN folder kamu bernama "Server" (huruf S besar). Jika kecil, ubah menjadi 'server'
-include __DIR__ . '/../Server/koneksi.php';
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $username = mysqli_real_escape_string($koneksi, $_POST['username']);
+    $password = $_POST['password'];
 
-$username = mysqli_real_escape_string($koneksi, $_POST['username']);
-$password = $_POST['password'];
-
-$query = mysqli_query($koneksi, "SELECT * FROM users WHERE username='$username'");
-$user  = mysqli_fetch_assoc($query);
-
-if ($user) {
-    if (password_verify($password, $user['password'])) {
-        $_SESSION['id']       = $user['id'];
-        $_SESSION['nama']     = $user['nama'];
-        $_SESSION['username'] = $user['username'];
+    $query = mysqli_query($koneksi, "SELECT * FROM users WHERE username='$username'");
+    
+    if (mysqli_num_rows($query) > 0) {
+        $row = mysqli_fetch_assoc($query);
         
-        // Cukup mundur 1 folder (../) untuk kembali ke file utama di dalam /api/
-        header("Location: ../dashboard.php");
+        // Memverifikasi password (jika waktu register menggunakan password_hash)
+        if (password_verify($password, $row['password'])) {
+            
+            // --- BAGIAN KRUSIAL / KUNCI PERBAIKAN ---
+            $_SESSION['id']       = $row['id'];       // PENTING: Key harus 'id' sesuai pengecekan di dashboard
+            $_SESSION['username'] = $row['username']; 
+            $_SESSION['nama']     = $row['nama'];
+            // ----------------------------------------
+
+            // Alihkan ke dashboard jika sukses
+            header("Location: ../dashboard.php");
+            exit;
+        } else {
+            // Password salah
+            header("Location: ../login.php?pesan=gagal");
+            exit;
+        }
+    } else {
+        // Username tidak ditemukan
+        header("Location: ../login.php?pesan=gagal");
         exit;
     }
 }
-
-// Cukup mundur 1 folder untuk memanggil login.php
-header("Location: ../login.php?pesan=gagal");
-exit;
-?>
