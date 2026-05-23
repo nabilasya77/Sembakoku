@@ -1,10 +1,4 @@
-<?php
-// Cek apakah user sudah login. Jika sudah, langsung lewati halaman ini dan masuk ke dashboard.
-if (isset($_COOKIE['login']) && $_COOKIE['login'] === "true") {
-    header("Location: dashboard.php");
-    exit;
-}
-?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -45,12 +39,12 @@ if (isset($_COOKIE['login']) && $_COOKIE['login'] === "true") {
             </p>
             
             <div class="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4 max-w-xs sm:max-w-none mx-auto w-full">
-                <a href="login" class="w-full sm:w-auto px-8 py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-full transition duration-300 shadow-lg shadow-orange-500/40 flex items-center justify-center transform hover:-translate-y-0.5">
-                    Mulai Kelola Sekarang <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
-                </a>
-                <a href="register" class="w-full sm:w-auto px-8 py-3.5 bg-transparent border-2 border-white hover:bg-white hover:text-gray-900 text-white font-bold rounded-full transition duration-300 flex items-center justify-center transform hover:-translate-y-0.5">
-                    Daftar Akun
-                </a>
+              <a href="login" class="w-full sm:w-auto px-8 py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-full transition duration-300 shadow-lg shadow-orange-500/40 flex items-center justify-center transform hover:-translate-y-0.5">
+    Mulai Kelola Sekarang <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+</a>
+<a href="register" class="w-full sm:w-auto px-8 py-3.5 bg-transparent border-2 border-white hover:bg-white hover:text-gray-900 text-white font-bold rounded-full transition duration-300 flex items-center justify-center transform hover:-translate-y-0.5">
+    Daftar Akun
+</a>
             </div>
         </div>
     </main>
