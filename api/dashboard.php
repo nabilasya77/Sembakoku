@@ -1,23 +1,15 @@
 <?php
-// Session
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
 
-// Koneksi database
 include 'Server/koneksi.php';
 
-// Cek login
-if (!isset($_SESSION['id'])) {
+if (!isset($_COOKIE['login'])) {
     header("Location: login.php?pesan=belum_login");
     exit;
 }
 
-// Sidebar
 include 'sidebar.php';
 
-
-
+?>
 // Card 1: Total Penjualan Hari Ini
 $penjualan_hari_ini_q = mysqli_query($koneksi, "SELECT SUM(total_bayar) AS total FROM penjualan WHERE DATE(tanggal) = CURDATE()");
 $penjualan_hari_ini   = mysqli_fetch_assoc($penjualan_hari_ini_q)['total'] ?? 0;
