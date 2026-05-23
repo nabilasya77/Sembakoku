@@ -1,17 +1,9 @@
 <?php
-
-require 'auth.php';
-
+// 1. Koneksi database
 require_once 'Server/koneksi.php';
 
-$nama_user = $_SESSION['nama'];
-$username  = $_SESSION['username'];
-
-// 2. Koneksi database
-require_once 'Server/koneksi.php';
-
-// 3. ✅ FIX: Cek login pakai SESSION (konsisten dengan prosesLogin.php)
-if (!isset($_SESSION['id'])) {
+// 2. ✅ FIX: Cek login pakai COOKIE agar support Vercel Serverless
+if (!isset($_COOKIE['login']) || $_COOKIE['login'] !== "true") {
     header("Location: login.php?pesan=belum_login");
     exit;
 }

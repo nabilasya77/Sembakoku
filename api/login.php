@@ -1,7 +1,6 @@
 <?php
-session_start();
-
-if (isset($_SESSION['id'])) {
+// Cek apakah cookie login sudah diset dan bernilai true
+if (isset($_COOKIE['login']) && $_COOKIE['login'] === "true") {
     header("Location: dashboard.php");
     exit;
 }
