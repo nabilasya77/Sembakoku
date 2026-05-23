@@ -1,13 +1,11 @@
 <?php
 
-include 'Server/koneksi.php';
+include 'server/koneksi.php';
 
 if (!isset($_COOKIE['login'])) {
-    header("Location: login.php?pesan=belum_login");
+    header("Location: login.php");
     exit;
 }
-
-include 'sidebar.php';
 
 ?>
 // Card 1: Total Penjualan Hari Ini
