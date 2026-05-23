@@ -2,7 +2,7 @@
 $host = 'gateway01.ap-southeast-1.prod.alicloud.tidbcloud.com'; 
 $port = 4000; 
 $user = '4V8VSYyX9oHGkdj.root';
-$pass = 'jKgo691yYWKXnM8o'; 
+$pass = 'NXj2m2Ptm46Lhlbj'; 
 $db   = 'sembakoku';
 
 $koneksi = mysqli_init();
