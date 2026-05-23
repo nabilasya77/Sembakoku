@@ -3,14 +3,18 @@
         "api/*.php": {
             "runtime": "vercel-php@0.7.1"
         },
-        "*.php": {
+        "api/Proses/*.php": {
             "runtime": "vercel-php@0.7.1"
         }
     },
     "routes": [
         {
-            "src": "/(.*)\\.php",
-            "dest": "/$1.php"
+            "src": "/api/Proses/(.*)\\.php",
+            "dest": "/api/Proses/$1.php"
+        },
+        {
+            "src": "/api/(.*)\\.php",
+            "dest": "/api/$1.php"
         },
         {
             "src": "/(.*)",
