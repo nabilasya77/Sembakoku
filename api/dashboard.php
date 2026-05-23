@@ -1,9 +1,15 @@
 <?php
+// 1. Start session
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
+// 2. Koneksi database
 require_once 'Server/koneksi.php';
 
-if (!isset($_COOKIE['login'])) {
-    header("Location: login.php");
+// 3. ✅ FIX: Cek login pakai SESSION (konsisten dengan prosesLogin.php)
+if (!isset($_SESSION['id'])) {
+    header("Location: login.php?pesan=belum_login");
     exit;
 }
 
@@ -15,7 +21,7 @@ $penjualan_hari_ini   = mysqli_fetch_assoc($penjualan_hari_ini_q)['total'] ?? 0;
 $transaksi_hari_ini_q = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM penjualan WHERE DATE(tanggal) = CURDATE()");
 $transaksi_hari_ini   = mysqli_fetch_assoc($transaksi_hari_ini_q)['total'] ?? 0;
 
-// Card 3: Total Keuntungan Hari Ini (Laba Bersih = Harga Jual - Harga Beli)
+// Card 3: Total Keuntungan Hari Ini
 $keuntungan_hari_ini_q = mysqli_query($koneksi, "
     SELECT SUM(dp.jumlah * (b.harga_jual - b.harga_beli)) AS total 
     FROM detail_penjualan dp 
@@ -23,32 +29,21 @@ $keuntungan_hari_ini_q = mysqli_query($koneksi, "
     JOIN penjualan p ON dp.penjualan_id = p.id 
     WHERE DATE(p.tanggal) = CURDATE()
 ");
-$keuntungan_hari_ini   = mysqli_fetch_assoc($keuntungan_hari_ini_q)['total'] ?? 0;
+$keuntungan_hari_ini = mysqli_fetch_assoc($keuntungan_hari_ini_q)['total'] ?? 0;
 
-// Card 4: Stok Hampir Habis (Peringatan di bawah 10 pcs)
+// Card 4: Stok Hampir Habis
 $stok_hampir_habis_q = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM barang WHERE stok < 10");
 $stok_hampir_habis   = mysqli_fetch_assoc($stok_hampir_habis_q)['total'] ?? 0;
 
-
-// ==========================================
-// 6. GENERATE DATA GRAFIK PENJUALAN 7 HARI TERAKHIR
-// ==========================================
+// Grafik 7 Hari Terakhir
 $hari_labels = [];
 $omset_hari  = [];
-
-// Looping untuk memastikan seluruh 7 hari terakhir muncul secara berurutan meskipun omsetnya 0
 for ($i = 6; $i >= 0; $i--) {
-    $tgl_raw   = date('Y-m-d', strtotime("-$i days"));
-    $tgl_label = date('d M', strtotime("-$i days")); // Contoh: "22 Mei"
-    
-    $hari_labels[] = $tgl_label;
-    
-    // Ambil data penjualan di tanggal tersebut
-    $q_omset = mysqli_query($koneksi, "SELECT SUM(total_bayar) AS total FROM penjualan WHERE DATE(tanggal) = '$tgl_raw'");
-    $d_omset = mysqli_fetch_assoc($q_omset);
-    $omset_hari[] = (int)($d_omset['total'] ?? 0);
+    $tgl_raw       = date('Y-m-d', strtotime("-$i days"));
+    $hari_labels[] = date('d M', strtotime("-$i days"));
+    $q_omset       = mysqli_query($koneksi, "SELECT SUM(total_bayar) AS total FROM penjualan WHERE DATE(tanggal) = '$tgl_raw'");
+    $omset_hari[]  = (int)(mysqli_fetch_assoc($q_omset)['total'] ?? 0);
 }
-
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -63,6 +58,9 @@ for ($i = 6; $i >= 0; $i--) {
     <style>body { font-family: 'Poppins', sans-serif; }</style>
 </head>
 <body class="bg-slate-50/50 text-slate-800 antialiased">
+
+    <?php include 'sidebar.php'; ?>
+
     <div class="flex flex-col md:flex-row min-h-screen">
         <div class="md:w-64 flex-shrink-0"></div>
 
@@ -78,6 +76,7 @@ for ($i = 6; $i >= 0; $i--) {
                 </div>
             </div>
 
+            <!-- Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
                 <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
                     <div>
@@ -120,10 +119,12 @@ for ($i = 6; $i >= 0; $i--) {
                 </div>
             </div>
 
+            <!-- Grid Konten Bawah -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 <div class="lg:col-span-2 space-y-6">
                     
+                    <!-- Menu Navigasi Cepat -->
                     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
                         <h3 class="font-bold text-slate-900 flex items-center gap-2 mb-4">
                             <i class="fa-solid fa-bolt text-amber-500"></i> Menu Navigasi Cepat
@@ -156,6 +157,7 @@ for ($i = 6; $i >= 0; $i--) {
                         </div>
                     </div>
 
+                    <!-- Grafik -->
                     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="font-bold text-slate-900 flex items-center gap-2">
@@ -170,6 +172,7 @@ for ($i = 6; $i >= 0; $i--) {
 
                 </div>
 
+                <!-- Transaksi Terbaru -->
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between h-full min-h-[420px]">
                     <div>
                         <div class="p-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
@@ -178,7 +181,6 @@ for ($i = 6; $i >= 0; $i--) {
                             </h3>
                             <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 font-bold text-[10px] rounded-md uppercase tracking-wider">Terbaru</span>
                         </div>
-
                         <div class="overflow-y-auto">
                             <table class="w-full text-left border-collapse">
                                 <thead>
@@ -191,29 +193,23 @@ for ($i = 6; $i >= 0; $i--) {
                                 <tbody class="divide-y divide-slate-100 text-xs font-medium text-slate-700">
                                     <?php
                                     $recent_transactions_q = mysqli_query($koneksi, "SELECT * FROM penjualan ORDER BY id DESC LIMIT 6");
-                                    if (mysqli_num_rows($recent_transactions_q) == 0):
-                                    ?>
+                                    if (mysqli_num_rows($recent_transactions_q) == 0): ?>
                                         <tr>
                                             <td colspan="3" class="p-8 text-center text-slate-400 font-normal">Belum ada data transaksi tersimpan.</td>
                                         </tr>
-                                    <?php
-                                    else:
-                                        while ($tx = mysqli_fetch_assoc($recent_transactions_q)):
-                                    ?>
+                                    <?php else:
+                                        while ($tx = mysqli_fetch_assoc($recent_transactions_q)): ?>
                                         <tr class="hover:bg-slate-50/80 transition duration-150">
                                             <td class="p-3 text-center text-slate-400">#<?php echo $tx['id']; ?></td>
                                             <td class="p-3 text-slate-500"><?php echo date('d M, H:i', strtotime($tx['tanggal'])); ?> WIB</td>
                                             <td class="p-3 text-right pr-5 text-emerald-600 font-bold">Rp <?php echo number_format($tx['total_bayar'], 0, ',', '.'); ?></td>
                                         </tr>
-                                    <?php 
-                                        endwhile;
-                                    endif; 
-                                    ?>
+                                    <?php endwhile;
+                                    endif; ?>
                                 </tbody>
                             </table>
                         </div>
                     </div>
-                    
                     <div class="p-4 bg-slate-50 border-t border-slate-100 text-center">
                         <a href="laporan.php" class="text-xs font-bold text-emerald-600 hover:text-emerald-700 transition flex items-center justify-center gap-1">
                             Lihat Laporan Detail <i class="fa-solid fa-arrow-right text-[10px]"></i>
@@ -230,11 +226,11 @@ for ($i = 6; $i >= 0; $i--) {
         new Chart(ctxMingguan, {
             type: 'bar',
             data: {
-                labels: <?php echo json_encode($hari_labels); ?>, // Berisi tanggal lengkap (Contoh: "22 Mei")
+                labels: <?php echo json_encode($hari_labels); ?>,
                 datasets: [{
                     label: 'Pendapatan Toko (Rp)',
                     data: <?php echo json_encode($omset_hari); ?>,
-                    backgroundColor: '#10b981', // Hijau Emerald (Sesuai request gambar acuan)
+                    backgroundColor: '#10b981',
                     hoverBackgroundColor: '#059669',
                     borderRadius: 6,
                     borderSkipped: false
@@ -243,21 +239,17 @@ for ($i = 6; $i >= 0; $i--) {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
                     y: {
                         beginAtZero: true,
                         grid: { color: '#f3f4f6' },
                         ticks: {
-                            callback: function(value) {
-                                return 'Rp ' + value.toLocaleString('id-ID');
-                            },
+                            callback: function(value) { return 'Rp ' + value.toLocaleString('id-ID'); },
                             font: { size: 10 }
                         }
                     },
-                    x: { 
+                    x: {
                         grid: { display: false },
                         ticks: { font: { size: 11, weight: '500' } }
                     }
