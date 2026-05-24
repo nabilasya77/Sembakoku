@@ -62,35 +62,53 @@ if (isset($_GET['hapus_item'])) {
     exit;
 }
 
-// Logika 3: Checkout Simpan Transaksi Permanen
+// Logika 3: Checkout - Simpan Transaksi Permanen
 if (isset($_POST['aksi']) && $_POST['aksi'] == 'checkout' && !empty($keranjang)) {
     $total_bayar = 0;
     foreach ($keranjang as $item) {
         $total_bayar += $item['subtotal'];
     }
-    
-    // FIX 1: Gunakan $tanggal_sekarang (bukan $tanggal yang tidak terdefinisi)
-    $tanggal= date('Y-m-d H:i:s');
-    
-    // FIX 2: Generate no_faktur & sertakan kolom yang ada di tabel
-    $no_faktur = 'INV-' . date('YmdHis');
 
-    $ins_penjualan = mysqli_query($koneksi, "INSERT INTO penjualan (no_faktur, tanggal, total_bayar) VALUES ('$no_faktur', '$tanggal', '$total_bayar')");
-    $penjualan_id  = mysqli_insert_id($koneksi);
+    $tanggal_sekarang = date('Y-m-d H:i:s');
+    $no_faktur        = 'INV-' . date('YmdHis');
+
+    // Generate id manual karena DB tidak support AUTO_INCREMENT
+    $last_q       = mysqli_query($koneksi, "SELECT MAX(id) as max_id FROM penjualan");
+    $last_row     = mysqli_fetch_assoc($last_q);
+    $new_id       = ($last_row['max_id'] !== null ? (int)$last_row['max_id'] : 0) + 1;
+
+    $ins_penjualan = mysqli_query(
+        $koneksi,
+        "INSERT INTO penjualan (id, no_faktur, tanggal, total_bayar, kasir_id)
+         VALUES ('$new_id', '$no_faktur', '$tanggal_sekarang', '$total_bayar', '$kasir_id')"
+    );
+    $penjualan_id = $new_id;
 
     if ($ins_penjualan) {
+        // Generate id untuk detail_penjualan juga
+        $last_det_q   = mysqli_query($koneksi, "SELECT MAX(id) as max_id FROM detail_penjualan");
+        $last_det_row = mysqli_fetch_assoc($last_det_q);
+        $new_det_id   = ($last_det_row['max_id'] !== null ? (int)$last_det_row['max_id'] : 0) + 1;
+
         foreach ($keranjang as $b_id => $item) {
-            $jml = $item['jumlah'];
-            // Insert ke tabel detail transaksi
-            mysqli_query($koneksi, "INSERT INTO detail_penjualan (penjualan_id, barang_id, jumlah, subtotal) VALUES ('$penjualan_id', '$b_id', '$jml', '".$item['subtotal']."')");
-            // Potong Stok Produk Otomatis
+            $jml          = (int)$item['jumlah'];
+            $subtotal     = (float)$item['subtotal'];
+            $harga_satuan = (float)$item['harga'];
+
+            mysqli_query(
+                $koneksi,
+                "INSERT INTO detail_penjualan (id, penjualan_id, barang_id, jumlah, harga_satuan, subtotal)
+                 VALUES ('$new_det_id', '$penjualan_id', '$b_id', '$jml', '$harga_satuan', '$subtotal')"
+            );
             mysqli_query($koneksi, "UPDATE barang SET stok = stok - $jml WHERE id = '$b_id'");
+            $new_det_id++;
         }
-        
-        // Kosongkan keranjang belanja dengan menghapus Cookie
-        setcookie('keranjang', '', time() - 3600, "/"); 
-        
-        echo "<script>alert('Transaksi penjualan sukses disimpan!'); window.location='penjualan.php';</script>";
+
+        setcookie('keranjang', '', time() - 3600, "/");
+        echo "<script>alert('Transaksi sukses! No. Faktur: $no_faktur'); window.location='penjualan.php';</script>";
+        exit;
+    } else {
+        echo "<script>alert('Gagal menyimpan transaksi! Silakan coba lagi.'); window.location='penjualan.php';</script>";
         exit;
     }
 }
