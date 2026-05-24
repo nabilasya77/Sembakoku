@@ -70,7 +70,7 @@ if (isset($_POST['aksi']) && $_POST['aksi'] == 'checkout' && !empty($keranjang))
     }
     
     // FIX 1: Gunakan $tanggal_sekarang (bukan $tanggal yang tidak terdefinisi)
-    $tanggal_sekarang = date('Y-m-d H:i:s');
+    $tanggal= date('Y-m-d H:i:s');
     
     // FIX 2: Generate no_faktur & sertakan kolom yang ada di tabel
     $no_faktur = 'INV-' . date('YmdHis');
