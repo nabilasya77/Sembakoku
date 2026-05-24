@@ -70,8 +70,8 @@ if (isset($_POST['aksi']) && $_POST['aksi'] == 'checkout' && !empty($keranjang))
     }
     $tanggal_sekarang = date('Y-m-d H:i:s');
 
-    // Insert ke tabel master penjualan
-    $ins_penjualan = mysqli_query($koneksi, "INSERT INTO penjualan (tanggal, total_bayar) VALUES ('$tanggal_sekarang', '$total_bayar')");
+   
+    $ins_penjualan = mysqli_query($koneksi, "INSERT INTO penjualan (tanggal, total_bayar) VALUES ('$tanggal', '$total_bayar')");
     $penjualan_id  = mysqli_insert_id($koneksi);
 
     if ($ins_penjualan) {
