@@ -68,12 +68,16 @@ if (isset($_POST['aksi']) && $_POST['aksi'] == 'checkout' && !empty($keranjang))
     foreach ($keranjang as $item) {
         $total_bayar += $item['subtotal'];
     }
+    
+    // FIX 1: Gunakan $tanggal_sekarang (bukan $tanggal yang tidak terdefinisi)
     $tanggal_sekarang = date('Y-m-d H:i:s');
+    
+    // FIX 2: Generate no_faktur & sertakan kolom yang ada di tabel
+    $no_faktur = 'INV-' . date('YmdHis');
 
-   
-    $ins_penjualan = mysqli_query($koneksi, "INSERT INTO penjualan (tanggal, total_bayar) VALUES ('$tanggal', '$total_bayar')");
+    $ins_penjualan = mysqli_query($koneksi, "INSERT INTO penjualan (no_faktur, tanggal, total_bayar) VALUES ('$no_faktur', '$tanggal_sekarang', '$total_bayar')");
     $penjualan_id  = mysqli_insert_id($koneksi);
-
+    
     if ($ins_penjualan) {
         foreach ($keranjang as $b_id => $item) {
             $jml = $item['jumlah'];
