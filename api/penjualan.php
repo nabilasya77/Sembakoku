@@ -1,8 +1,26 @@
 <?php
 include 'Server/koneksi.php';
 
-// Validasi Login (Opsional, menyesuaikan dengan sistem login Cookie Anda sebelumnya)
+// Validasi Login
 if (!isset($_COOKIE['login']) || $_COOKIE['login'] !== "true") {
+    header("Location: login.php?pesan=belum_login");
+    exit;
+}
+
+// ============================================================
+// AMBIL kasir_id DARI TABEL users BERDASARKAN COOKIE USERNAME
+// Sesuaikan nama cookie 'username' jika berbeda di login.php Anda
+// ============================================================
+$kasir_id = null;
+if (isset($_COOKIE['username'])) {
+    $uname    = mysqli_real_escape_string($koneksi, $_COOKIE['username']);
+    $user_q   = mysqli_query($koneksi, "SELECT id FROM users WHERE username = '$uname' LIMIT 1");
+    $user_row = mysqli_fetch_assoc($user_q);
+    $kasir_id = $user_row['id'] ?? null;
+}
+
+// Jika kasir_id tidak ditemukan, redirect ke login
+if ($kasir_id === null) {
     header("Location: login.php?pesan=belum_login");
     exit;
 }
@@ -10,16 +28,17 @@ if (!isset($_COOKIE['login']) || $_COOKIE['login'] !== "true") {
 // 0. Inisialisasi Keranjang dari Cookie
 $keranjang = [];
 if (isset($_COOKIE['keranjang'])) {
-    // Decode data teks JSON dari cookie kembali menjadi Array PHP
     $keranjang = json_decode($_COOKIE['keranjang'], true) ?: [];
 }
 
-// Fungsi pembantu untuk menyimpan perubahan array keranjang ke dalam Cookie (Berlaku 1 Hari)
+// Fungsi pembantu simpan keranjang ke Cookie (berlaku 1 hari)
 function simpanKeranjang($data_keranjang) {
-    setcookie('keranjang', json_encode($data_keranjang), time() + 86400, "/"); 
+    setcookie('keranjang', json_encode($data_keranjang), time() + 86400, "/");
 }
 
-// Logika 1: Tambah Item Ke Keranjang Belanja Sementara
+// ============================================================
+// Logika 1: Tambah Item Ke Keranjang
+// ============================================================
 if (isset($_POST['aksi']) && $_POST['aksi'] == 'tambah_keranjang') {
     $barang_id = (int)$_POST['barang_id'];
     $jumlah    = (int)$_POST['jumlah'];
@@ -29,7 +48,7 @@ if (isset($_POST['aksi']) && $_POST['aksi'] == 'tambah_keranjang') {
 
     if ($brg && $brg['stok'] >= $jumlah) {
         if (isset($keranjang[$barang_id])) {
-            $keranjang[$barang_id]['jumlah']   += $jumlah;
+            $keranjang[$barang_id]['jumlah']  += $jumlah;
             $keranjang[$barang_id]['subtotal'] = $keranjang[$barang_id]['jumlah'] * $brg['harga_jual'];
         } else {
             $keranjang[$barang_id] = [
@@ -39,10 +58,7 @@ if (isset($_POST['aksi']) && $_POST['aksi'] == 'tambah_keranjang') {
                 'subtotal' => $brg['harga_jual'] * $jumlah
             ];
         }
-        
-        // Simpan pembaruan ke Cookie
         simpanKeranjang($keranjang);
-        
         echo "<script>window.location='penjualan.php';</script>";
         exit;
     } else {
@@ -51,18 +67,22 @@ if (isset($_POST['aksi']) && $_POST['aksi'] == 'tambah_keranjang') {
     }
 }
 
-// Logika 2: Reset / Hapus Item Keranjang Tunggal
+// ============================================================
+// Logika 2: Hapus Item Tunggal dari Keranjang
+// ============================================================
 if (isset($_GET['hapus_item'])) {
     $id_del = (int)$_GET['hapus_item'];
-    if(isset($keranjang[$id_del])) {
+    if (isset($keranjang[$id_del])) {
         unset($keranjang[$id_del]);
-        simpanKeranjang($keranjang); // Perbarui Cookie setelah item dihapus
+        simpanKeranjang($keranjang);
     }
     header("Location: penjualan.php");
     exit;
 }
 
+// ============================================================
 // Logika 3: Checkout - Simpan Transaksi Permanen
+// ============================================================
 if (isset($_POST['aksi']) && $_POST['aksi'] == 'checkout' && !empty($keranjang)) {
     $total_bayar = 0;
     foreach ($keranjang as $item) {
@@ -73,9 +93,9 @@ if (isset($_POST['aksi']) && $_POST['aksi'] == 'checkout' && !empty($keranjang))
     $no_faktur        = 'INV-' . date('YmdHis');
 
     // Generate id manual karena DB tidak support AUTO_INCREMENT
-    $last_q       = mysqli_query($koneksi, "SELECT MAX(id) as max_id FROM penjualan");
-    $last_row     = mysqli_fetch_assoc($last_q);
-    $new_id       = ($last_row['max_id'] !== null ? (int)$last_row['max_id'] : 0) + 1;
+    $last_q   = mysqli_query($koneksi, "SELECT MAX(id) as max_id FROM penjualan");
+    $last_row = mysqli_fetch_assoc($last_q);
+    $new_id   = ($last_row['max_id'] !== null ? (int)$last_row['max_id'] : 0) + 1;
 
     $ins_penjualan = mysqli_query(
         $koneksi,
@@ -85,7 +105,7 @@ if (isset($_POST['aksi']) && $_POST['aksi'] == 'checkout' && !empty($keranjang))
     $penjualan_id = $new_id;
 
     if ($ins_penjualan) {
-        // Generate id untuk detail_penjualan juga
+        // Generate id manual untuk detail_penjualan
         $last_det_q   = mysqli_query($koneksi, "SELECT MAX(id) as max_id FROM detail_penjualan");
         $last_det_row = mysqli_fetch_assoc($last_det_q);
         $new_det_id   = ($last_det_row['max_id'] !== null ? (int)$last_det_row['max_id'] : 0) + 1;
@@ -104,6 +124,7 @@ if (isset($_POST['aksi']) && $_POST['aksi'] == 'checkout' && !empty($keranjang))
             $new_det_id++;
         }
 
+        // Kosongkan keranjang
         setcookie('keranjang', '', time() - 3600, "/");
         echo "<script>alert('Transaksi sukses! No. Faktur: $no_faktur'); window.location='penjualan.php';</script>";
         exit;
@@ -113,7 +134,7 @@ if (isset($_POST['aksi']) && $_POST['aksi'] == 'checkout' && !empty($keranjang))
     }
 }
 
-// Sertakan sidebar setelah logika Cookie (karena setcookie harus dieksekusi sebelum ada output HTML)
+// Sertakan sidebar setelah semua logika Cookie
 include 'sidebar.php';
 ?>
 <!DOCTYPE html>
@@ -138,8 +159,12 @@ include 'sidebar.php';
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+
+                <!-- Form Pilih Barang -->
                 <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
-                    <h3 class="font-bold text-lg text-slate-900"><i class="fa-solid fa-cart-plus text-orange-500 mr-1"></i> Pilih Barang</h3>
+                    <h3 class="font-bold text-lg text-slate-900">
+                        <i class="fa-solid fa-cart-plus text-orange-500 mr-1"></i> Pilih Barang
+                    </h3>
                     <form action="penjualan.php" method="POST" class="space-y-4">
                         <input type="hidden" name="aksi" value="tambah_keranjang">
                         <div>
@@ -149,14 +174,19 @@ include 'sidebar.php';
                                 <?php
                                 $get_b = mysqli_query($koneksi, "SELECT * FROM barang WHERE stok > 0 ORDER BY nama_barang ASC");
                                 while ($b = mysqli_fetch_assoc($get_b)) {
-                                    echo "<option value='".$b['id']."'>".$b['nama_barang']." (Stok: ".$b['stok']." ".$b['satuan'].") - Rp ".number_format($b['harga_jual'],0,',','.')."</option>";
+                                    echo "<option value='" . $b['id'] . "'>"
+                                        . htmlspecialchars($b['nama_barang'])
+                                        . " (Stok: " . $b['stok'] . " " . $b['satuan'] . ")"
+                                        . " - Rp " . number_format($b['harga_jual'], 0, ',', '.')
+                                        . "</option>";
                                 }
                                 ?>
                             </select>
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Kuantitas Kebutuhan</label>
-                            <input type="number" name="jumlah" min="1" required value="1" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 text-sm">
+                            <input type="number" name="jumlah" min="1" required value="1"
+                                class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 text-sm">
                         </div>
                         <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 px-4 rounded-xl transition text-sm">
                             <i class="fa-solid fa-plus mr-1"></i> Tambahkan
@@ -164,8 +194,11 @@ include 'sidebar.php';
                     </form>
                 </div>
 
+                <!-- Tabel Keranjang -->
                 <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-                    <div class="p-5 border-b border-slate-100"><h3 class="font-bold text-slate-900">Keranjang Belanja</h3></div>
+                    <div class="p-5 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-900">Keranjang Belanja</h3>
+                    </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead>
@@ -181,9 +214,13 @@ include 'sidebar.php';
                             <tbody class="divide-y divide-slate-100 text-sm font-medium text-slate-700">
                                 <?php
                                 $no_k = 1; $total_akhir = 0; $total_item = 0;
-                                if(empty($keranjang)):
+                                if (empty($keranjang)):
                                 ?>
-                                    <tr><td colspan="6" class="p-8 text-center text-slate-400 font-normal">Keranjang belanja masih kosong.</td></tr>
+                                    <tr>
+                                        <td colspan="6" class="p-8 text-center text-slate-400 font-normal">
+                                            Keranjang belanja masih kosong.
+                                        </td>
+                                    </tr>
                                 <?php
                                 else:
                                     foreach ($keranjang as $key_id => $item):
@@ -193,11 +230,15 @@ include 'sidebar.php';
                                     <tr class="hover:bg-slate-50/50 transition">
                                         <td class="p-4 text-center text-slate-400 font-normal"><?php echo $no_k++; ?></td>
                                         <td class="p-4 font-bold text-slate-900"><?php echo htmlspecialchars($item['nama']); ?></td>
-                                        <td class="p-4 text-slate-500">Rp <?php echo number_format($item['harga'],0,',','.'); ?></td>
+                                        <td class="p-4 text-slate-500">Rp <?php echo number_format($item['harga'], 0, ',', '.'); ?></td>
                                         <td class="p-4 text-center"><?php echo $item['jumlah']; ?></td>
-                                        <td class="p-4 text-orange-600 font-bold">Rp <?php echo number_format($item['subtotal'],0,',','.'); ?></td>
+                                        <td class="p-4 text-orange-600 font-bold">Rp <?php echo number_format($item['subtotal'], 0, ',', '.'); ?></td>
                                         <td class="p-4 text-center">
-                                            <a href="penjualan.php?hapus_item=<?php echo $key_id; ?>" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash-can"></i></a>
+                                            <a href="penjualan.php?hapus_item=<?php echo $key_id; ?>"
+                                               onclick="return confirm('Hapus item ini dari keranjang?')"
+                                               class="text-red-500 hover:text-red-700">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </a>
                                         </td>
                                     </tr>
                                 <?php endforeach; endif; ?>
@@ -205,22 +246,25 @@ include 'sidebar.php';
                         </table>
                     </div>
 
-                    <?php if(!empty($keranjang)): ?>
+                    <?php if (!empty($keranjang)): ?>
                     <div class="p-5 bg-gray-50 border-t flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
                             <span class="text-xs text-gray-400 uppercase font-semibold block">Total Pembayaran</span>
-                            <span class="text-2xl font-black text-gray-900">Rp <?php echo number_format($total_akhir,0,',','.'); ?></span>
+                            <span class="text-2xl font-black text-gray-900">Rp <?php echo number_format($total_akhir, 0, ',', '.'); ?></span>
                             <span class="text-xs text-gray-500 block">(Total: <?php echo $total_item; ?> Item)</span>
                         </div>
-                        <form action="penjualan.php" method="POST">
+                        <form action="penjualan.php" method="POST"
+                              onsubmit="return confirm('Yakin ingin menyelesaikan transaksi ini?')">
                             <input type="hidden" name="aksi" value="checkout">
-                            <button type="submit" class="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-extrabold py-3 px-8 rounded-xl text-sm shadow-md transition">
+                            <button type="submit"
+                                class="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-extrabold py-3 px-8 rounded-xl text-sm shadow-md transition">
                                 <i class="fa-solid fa-circle-check mr-1"></i> Selesaikan Transaksi
                             </button>
                         </form>
                     </div>
                     <?php endif; ?>
                 </div>
+
             </div>
         </main>
     </div>
