@@ -17,7 +17,13 @@ if (isset($_POST['simpan'])) {
     $harga_jual  = (int)$_POST['harga_jual'];
 
     if ($_POST['id_barang'] == "") {
-        $query = "INSERT INTO barang (nama_barang, kategori, stok, satuan, harga_beli, harga_jual) VALUES ('$nama_barang', '$kategori', '$stok', '$satuan', '$harga_beli', '$harga_jual')";
+        // FIX: Generate id manual karena DB tidak support AUTO_INCREMENT
+        $last_q   = mysqli_query($koneksi, "SELECT MAX(id) as max_id FROM barang");
+        $last_row = mysqli_fetch_assoc($last_q);
+        $new_id   = ($last_row['max_id'] !== null ? (int)$last_row['max_id'] : 0) + 1;
+
+        $query = "INSERT INTO barang (id, nama_barang, kategori, stok, satuan, harga_beli, harga_jual)
+                  VALUES ('$new_id', '$nama_barang', '$kategori', '$stok', '$satuan', '$harga_beli', '$harga_jual')";
     } else {
         $id_barang = (int)$_POST['id_barang'];
         $query = "UPDATE barang SET nama_barang='$nama_barang', kategori='$kategori', stok='$stok', satuan='$satuan', harga_beli='$harga_beli', harga_jual='$harga_jual' WHERE id='$id_barang'";
@@ -95,7 +101,12 @@ include 'sidebar.php';
                                 <input type="number" name="harga_jual" required value="<?php echo $edit_data['harga_jual']; ?>" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm">
                             </div>
                         </div>
-                        <button type="submit" name="simpan" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl transition text-sm">Simpan Produk</button>
+                        <div class="flex gap-3">
+                            <button type="submit" name="simpan" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl transition text-sm">Simpan Produk</button>
+                            <?php if ($edit_data['id']): ?>
+                            <a href="stok.php" class="flex-1 text-center bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl transition text-sm">Batal</a>
+                            <?php endif; ?>
+                        </div>
                     </form>
                 </div>
 
@@ -114,17 +125,21 @@ include 'sidebar.php';
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-sm font-medium text-slate-700">
                             <?php
-                            $no = 1;
+                            $no  = 1;
                             $res = mysqli_query($koneksi, "SELECT * FROM barang ORDER BY id DESC");
-                            while($row = mysqli_fetch_assoc($res)):
+                            while ($row = mysqli_fetch_assoc($res)):
                             ?>
                             <tr class="hover:bg-slate-50/50 transition">
                                 <td class="p-4 pl-6 text-center text-slate-400"><?php echo $no++; ?></td>
                                 <td class="p-4 font-bold text-slate-900"><?php echo htmlspecialchars($row['nama_barang']); ?></td>
                                 <td class="p-4"><span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-lg"><?php echo htmlspecialchars($row['kategori']); ?></span></td>
-                                <td class="p-4 text-center"><span class="px-2.5 py-1 rounded-lg text-xs font-bold <?php echo ($row['stok'] < 10) ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'; ?>"><?php echo $row['stok'].' '.$row['satuan']; ?></span></td>
-                                <td class="p-4 text-slate-500">Rp <?php echo number_format($row['harga_beli'],0,',','.'); ?></td>
-                                <td class="p-4 text-orange-600 font-bold">Rp <?php echo number_format($row['harga_jual'],0,',','.'); ?></td>
+                                <td class="p-4 text-center">
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold <?php echo ($row['stok'] < 10) ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'; ?>">
+                                        <?php echo $row['stok'] . ' ' . $row['satuan']; ?>
+                                    </span>
+                                </td>
+                                <td class="p-4 text-slate-500">Rp <?php echo number_format($row['harga_beli'], 0, ',', '.'); ?></td>
+                                <td class="p-4 text-orange-600 font-bold">Rp <?php echo number_format($row['harga_jual'], 0, ',', '.'); ?></td>
                                 <td class="p-4 text-center flex justify-center gap-2">
                                     <a href="stok.php?action=edit&id=<?php echo $row['id']; ?>" class="text-blue-500 hover:text-blue-700"><i class="fa-solid fa-pen-to-square"></i></a>
                                     <a href="hapus.php?id=<?php echo $row['id']; ?>" onclick="return confirm('Hapus produk ini?')" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash-can"></i></a>
